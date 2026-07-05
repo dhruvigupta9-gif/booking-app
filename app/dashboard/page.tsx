@@ -11,10 +11,10 @@ return (
     <main className="min-h-screen p-8">
 
         <div className="flex items-center justify-between mb-8">
-            <h1 className="text-3x1 font-bold">Dashboard</h1>
+            <h1 className="text-3xl font-bold">Schedulr Dashboard</h1>
             <UserButton />
         </div>
-        <p  className="text-gray-500">Welcome to your BookIt dashboard!</p>
+        <p  className="text-gray-500">Welcome to your Schedulr dashboard!</p>
     
     </main>
 )

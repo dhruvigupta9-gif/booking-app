@@ -1,19 +1,19 @@
 generator client {
-  provider="prisma-client-js"
+  provider = "prisma-client-js"
 }
 
-datasource db{
-  provider="postgresql"
-  url=env("DATABASE_URL)
+datasource db {
+  provider = "postgresql"
+  url = env("DATABASE_URL")
 }
 
-model User{
+model User {
   id         String   @id @default(cuid())
   email      String   @unique
   name       String?
   hourlyRate Float?
   bookings   Booking[]
-  createAdt  DataTime @default(now())
+  createdAt  DateTime @default(now())
 }
 
 model Booking {
@@ -25,6 +25,6 @@ model Booking {
   endTime     DateTime
   type        String
   status      String @default("pending")
-  createAdt   DateTime @default(now())
+  createdAt   DateTime @default(now())
   host        User   @relation(fields: [hostId], references: [id])
 }

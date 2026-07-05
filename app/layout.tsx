@@ -1,6 +1,11 @@
 import { ClerkProvider } from '@clerk/nextjs'
 import './globals.css'
 
+export const metadata = {
+  title: 'Schedulr',
+  description: 'Your Scheduling App',
+}
+
 export default function RootLayout({
   children,
 }: {
