@@ -25,9 +25,15 @@ export async function GET(req: Request) {
 
     const { tokens } = await oauth2Client.getToken(code)
 
-    await prisma.user.update({
+    await prisma.user.upsert({
         where: { id: userId },
-        data: {
+        update: {
+            googleAccessToken: tokens.access_token ?? null,
+            googleRefreshToken: tokens.refresh_token ?? null,
+        },
+        create: {
+            id: userId,
+            email: '',
             googleAccessToken: tokens.access_token ?? null,
             googleRefreshToken: tokens.refresh_token ?? null,
         },
