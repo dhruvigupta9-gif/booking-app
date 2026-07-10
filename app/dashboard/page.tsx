@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation'
 import { prisma } from '@/lib/prisma'
 import Link from 'next/link'
 import UsernameForm from './UsernameForm'
+import BookingsList from './BookingsList'
 
 export default async function DashboardPage() {
     const { userId } = await auth()
@@ -14,6 +15,11 @@ export default async function DashboardPage() {
 
     const user = await prisma.user.findUnique({
         where: { id: userId },
+    })
+
+    const bookings = await prisma.booking.findMany({
+        where: { hostId: userId },
+        orderBy: { createdAt: 'desc' },
     })
 
     return (
@@ -57,6 +63,11 @@ export default async function DashboardPage() {
                             </Link>
                         </div>
                     )}
+                </div>
+
+                <div className="border rounded-lg p-6">
+                    <h2 className="text-xl font-semibold mb-4">Your Bookings</h2>
+                    <BookingsList bookings={bookings} />
                 </div>
 
             </div>

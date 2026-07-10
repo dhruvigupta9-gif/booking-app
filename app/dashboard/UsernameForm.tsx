@@ -27,8 +27,10 @@ export default function UsernameForm() {
             setLoading(false)
             return
         }
+
         router.refresh()
     }
+
     return (
         <div className="flex gap-2">
             <input
@@ -45,7 +47,6 @@ export default function UsernameForm() {
             >
                 {loading ? 'Saving...' : 'Save'}
             </button>
-
             {error && <p className="text-red-500 text-sm mt-1">{error}</p>}
         </div>
     )
