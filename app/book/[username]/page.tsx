@@ -1,3 +1,4 @@
+import { Suspense } from 'react'
 import { prisma } from '@/lib/prisma'
 import { notFound } from 'next/navigation'
 import BookingForm from './BookingForm'
@@ -19,7 +20,7 @@ export default async function BookingPage({ params }: Props) {
         return (
             <main className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <h1 className="text-2x1 font-bold mb-2">{host.name || host.email}</h1>
+                    <h1 className="text-2xl font-bold mb-2">{host.name || host.email}</h1>
                     <p className="text-gray-500">This user has not connected their google calendar yet</p>
                 </div>
             </main>
@@ -34,7 +35,9 @@ export default async function BookingPage({ params }: Props) {
                 </h1>
                 <p className="text-gray-500">Pick a date and time that works for you</p>
             </div>
-            <BookingForm hostId={host.id} hostName={host.name || host.username || ''} />
+            <Suspense fallback={<div className="text-center text-gray-500">Loading booking form...</div>}>
+                <BookingForm hostId={host.id} hostName={host.name || host.username || ''} />
+            </Suspense>
         </main>
     )
 }

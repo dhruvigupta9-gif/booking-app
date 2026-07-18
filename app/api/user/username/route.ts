@@ -16,10 +16,15 @@ export async function POST(req: Request) {
         return Response.json({ error: 'Username already taken' }, { status: 400 })
     }
 
-    await prisma.user.update({
+    await prisma.user.upsert({
         where: { id: userId },
-        data: { username }
-    })
+        update: { username },
+        create: {
+            id: userId,
+            email: "",
+            username,
+        },
+    });
 
     return Response.json({ success: true })
 }

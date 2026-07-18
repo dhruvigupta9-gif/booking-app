@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+import { useSearchParams } from 'next/navigation'
 
 interface Slot {
     start: string
@@ -13,7 +14,12 @@ interface Props {
     hostName: string
 }
 
+const DURATIONS = [15, 30, 45, 60]
+
 export default function BookingForm({ hostId, hostName }: Props) {
+    const searchParams = useSearchParams()
+
+    const [duration, setDuration] = useState(60)
     const [date, setDate] = useState('')
     const [slots, setSlots] = useState<Slot[]>([])
     const [selectedSlot, setSelectedSlot] = useState<Slot | null>(null)
@@ -23,17 +29,30 @@ export default function BookingForm({ hostId, hostName }: Props) {
     const [bookingType, setBookingType] = useState<'personal' | 'work'>('personal')
     const [submitting, setSubmitting] = useState(false)
     const [success, setSuccess] = useState(false)
+    const [cancelled, setCancelled] = useState(false)
     const [error, setError] = useState('')
 
-    async function fetchSlots(selectedDate: string) {
+    useEffect(() => {
+        const paid = searchParams.get('paid')
+        if (paid === 'true') setSuccess(true)
+        else if (paid === 'false') setCancelled(true)
+    }, [searchParams])
+
+    async function fetchSlots(selectedDate: string, selectedDuration: number) {
         setLoadingSlots(true)
         setSlots([])
         setSelectedSlot(null)
 
-        const res = await fetch(`/api/slots?userId=${hostId}&date=${selectedDate}`)
+        const res = await fetch(`/api/slots?userId=${hostId}&date=${selectedDate}&duration=${selectedDuration}`)
         const data = await res.json()
         setSlots(data.slots || [])
         setLoadingSlots(false)
+    }
+
+    function handleDurationChange(newDuration: number) {
+        setDuration(newDuration)
+        setSelectedSlot(null)
+        if (date) fetchSlots(date, newDuration)
     }
 
     async function handleSubmit() {
@@ -49,11 +68,9 @@ export default function BookingForm({ hostId, hostName }: Props) {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                hostId,
-                clientName,
-                clientEmail,
+                hostId, clientName, clientEmail,
                 startTime: selectedSlot.start,
-                endTime: selectedSlot.end,
+                duration,
                 type: bookingType,
             }),
         })
@@ -63,6 +80,11 @@ export default function BookingForm({ hostId, hostName }: Props) {
         if (!res.ok) {
             setError(data.error || 'Something went wrong')
             setSubmitting(false)
+            return
+        }
+
+        if (data.checkoutUrl) {
+            window.location.href = data.checkoutUrl
             return
         }
 
@@ -84,6 +106,30 @@ export default function BookingForm({ hostId, hostName }: Props) {
     return (
         <div className="space-y-6">
 
+            {cancelled && (
+                <div className="text-center p-4 border border-yellow-300 bg-yellow-50 rounded-lg text-yellow-700">
+                    Payment was cancelled. You can try booking again below.
+                </div>
+            )}
+
+            <div className="border rounded-lg p-6">
+                <h2 className="text-lg font-semibold mb-4">Session Length</h2>
+                <div className="grid grid-cols-4 gap-2">
+                    {DURATIONS.map((d) => (
+                        <button
+                            key={d}
+                            onClick={() => handleDurationChange(d)}
+                            className={`p-2 rounded border text-sm ${duration === d
+                                ? 'bg-blue-600 text-white border-blue-600'
+                                : 'hover:border-blue-400'
+                                }`}
+                        >
+                            {d} min
+                        </button>
+                    ))}
+                </div>
+            </div>
+
             <div className="border rounded-lg p-6">
                 <h2 className="text-lg font-semibold mb-4">Select a Date</h2>
                 <input
@@ -92,7 +138,7 @@ export default function BookingForm({ hostId, hostName }: Props) {
                     min={new Date().toISOString().split('T')[0]}
                     onChange={(e) => {
                         setDate(e.target.value)
-                        fetchSlots(e.target.value)
+                        fetchSlots(e.target.value, duration)
                     }}
                     className="border rounded px-3 py-2 w-full"
                 />

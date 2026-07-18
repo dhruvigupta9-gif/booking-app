@@ -9,7 +9,8 @@ interface Booking {
     startTime: Date
     endTime: Date
     type: string
-    status: string
+    approvalStatus: string
+    paymentStatus: string
     createdAt: Date
 }
 
@@ -18,8 +19,8 @@ interface Props {
 }
 
 export default function BookingsList({ bookings }: Props) {
-    const [bookingStates, setBookingStates] = useState<Record<string, string>>(
-        Object.fromEntries(bookings.map((b) => [b.id, b.status]))
+    const [approvalStates, setApprovalStates] = useState<Record<string, string>>(
+        Object.fromEntries(bookings.map((b) => [b.id, b.approvalStatus]))
     )
     const [loading, setLoading] = useState<string | null>(null)
 
@@ -33,7 +34,7 @@ export default function BookingsList({ bookings }: Props) {
         })
 
         if (res.ok) {
-            setBookingStates((prev) => ({ ...prev, [bookingId]: status }))
+            setApprovalStates((prev) => ({ ...prev, [bookingId]: status }))
         }
 
         setLoading(null)
@@ -52,13 +53,27 @@ export default function BookingsList({ bookings }: Props) {
                             <p className="font-semibold">{booking.clientName}</p>
                             <p className="text-sm text-gray-500">{booking.clientEmail}</p>
                         </div>
-                        <span className={`text-sm px-2 py-1 rounded-full ${bookingStates[booking.id] === 'pending' ? 'bg-yellow-100 text-yellow-700' :
-                            bookingStates[booking.id] === 'approved' ? 'bg-green-100 text-green-700' :
-                                bookingStates[booking.id] === 'rejected' ? 'bg-red-100 text-red-700' :
-                                    'bg-gray-100 text-gray-700'
-                            }`}>
-                            {bookingStates[booking.id]}
-                        </span>
+
+                        <div className="flex gap-2">
+                            {/* Approval badge */}
+                            <span className={`text-sm px-2 py-1 rounded-full ${approvalStates[booking.id] === 'pending' ? 'bg-yellow-100 text-yellow-700' :
+                                approvalStates[booking.id] === 'approved' ? 'bg-green-100 text-green-700' :
+                                    approvalStates[booking.id] === 'rejected' ? 'bg-red-100 text-red-700' :
+                                        'bg-gray-100 text-gray-700'
+                                }`}>
+                                {approvalStates[booking.id]}
+                            </span>
+
+                            {/* Payment badge — only meaningful for work bookings */}
+                            {booking.type === 'work' && (
+                                <span className={`text-sm px-2 py-1 rounded-full ${booking.paymentStatus === 'paid' ? 'bg-blue-100 text-blue-700' :
+                                    booking.paymentStatus === 'unpaid' ? 'bg-orange-100 text-orange-700' :
+                                        'bg-gray-100 text-gray-700'
+                                    }`}>
+                                    {booking.paymentStatus}
+                                </span>
+                            )}
+                        </div>
                     </div>
 
                     <div className="text-sm text-gray-600 mb-3">
@@ -73,7 +88,7 @@ export default function BookingsList({ bookings }: Props) {
                         <p>📋 {booking.type === 'work' ? '💼 Work booking' : '👤 Personal booking'}</p>
                     </div>
 
-                    {bookingStates[booking.id] === 'pending' && (
+                    {approvalStates[booking.id] === 'pending' && (
                         <div className="flex gap-2">
                             <button
                                 onClick={() => updateStatus(booking.id, 'approved')}

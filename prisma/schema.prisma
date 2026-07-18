@@ -15,19 +15,25 @@ model User {
   hourlyRate         Float?
   googleAccessToken  String?
   googleRefreshToken String?
+  workStartHour      Int?
+  workEndHour        Int?
   bookings           Booking[]
   createdAt          DateTime @default(now())
 }
 
 model Booking {
-  id          String @id @default(cuid())
-  hostId      String
-  clientName  String
-  clientEmail String
-  startTime   DateTime
-  endTime     DateTime
-  type        String
-  status      String @default("pending")
-  createdAt   DateTime @default(now())
-  host        User   @relation(fields: [hostId], references: [id])
+  id              String   @id @default(cuid())
+  hostId          String
+  clientName      String
+  clientEmail     String
+  startTime       DateTime
+  endTime         DateTime
+  type            String
+  approvalStatus  String   @default("pending") // "pending" | "approved" | "rejected"
+  paymentStatus   String   @default("n/a") // "n/a" | "unpaid" | "paid"
+  stripeSessionId String?
+  amount          Int?     // in cents
+  createdAt       DateTime @default(now())
+  host            User     @relation(fields: [hostId], references: [id])
+  calendarEventId String?
 }
