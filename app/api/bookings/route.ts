@@ -65,6 +65,7 @@ export async function POST(req: Request) {
         })
 
         const origin = new URL(req.url).origin
+        success_url: `${origin}/book/${host.username}?paid=true`
 
         const session = await stripe.checkout.sessions.create({
             mode: 'payment',
