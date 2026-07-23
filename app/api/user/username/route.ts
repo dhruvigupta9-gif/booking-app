@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     const existing = await prisma.user.findUnique({
         where: { username },
     })
-    if (existing) {
+    if (existing && existing.id !== userId) {
         return Response.json({ error: 'Username already taken' }, { status: 400 })
     }
 
@@ -26,5 +26,5 @@ export async function POST(req: Request) {
         },
     });
 
-    return Response.json({ success: true })
+    return Response.json({ username })
 }

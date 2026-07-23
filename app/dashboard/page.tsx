@@ -35,19 +35,10 @@ export default async function DashboardPage() {
 
                 <div className="border rounded-lg p-6">
                     <h2 className="text-xl font-semibold mb-2">Your Booking Link</h2>
-                    {user?.username ? (
-                        <div>
-                            <p className="text-gray-500 mb-2">Share this link with clients:</p>
-                            <div className="bg-gray-100 rounded p-3 font-mono text-sm">
-                                {process.env.NEXT_PUBLIC_APP_URL}/book/{user.username}
-                            </div>
-                        </div>
-                    ) : (
-                        <div>
-                            <p className="text-gray-500 mb-4">Set a username to get your public booking link.</p>
-                            <UsernameForm />
-                        </div>
+                    {!user?.username && (
+                        <p className="text-gray-500 mb-4">Set a username to get your public booking link.</p>
                     )}
+                    <UsernameForm currentUsername={user?.username ?? null} />
                 </div>
 
                 <div className="border rounded-lg p-6">
