@@ -20,7 +20,7 @@ export default async function BookingPage({ params }: Props) {
         return (
             <main className="min-h-screen flex items-center justify-center">
                 <div className="text-center">
-                    <h1 className="text-2xl font-bold mb-2">{host.name || host.email}</h1>
+                    <h1 className="text-2xl font-bold mb-2">{host.username || host.name || host.email}</h1>
                     <p className="text-gray-500">This user has not connected their google calendar yet</p>
                 </div>
             </main>
@@ -31,12 +31,12 @@ export default async function BookingPage({ params }: Props) {
         <main className="min-h-screen p-8 max-w-2xl mx-auto">
             <div className="mb-8 text-center">
                 <h1 className="text-3xl font-bold mb-2">
-                    Book a session with {host.name || host.username}
+                    Book a session with {host.username || host.name}
                 </h1>
                 <p className="text-gray-500">Pick a date and time that works for you</p>
             </div>
             <Suspense fallback={<div className="text-center text-gray-500">Loading booking form...</div>}>
-                <BookingForm hostId={host.id} hostName={host.name || host.username || ''} />
+                <BookingForm hostId={host.id} hostName={host.username || host.name || ''} />
             </Suspense>
         </main>
     )
