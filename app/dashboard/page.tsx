@@ -44,7 +44,15 @@ export default async function DashboardPage() {
                 <div className="border rounded-lg p-6">
                     <h2 className="text-xl font-semibold mb-2">Google Calendar</h2>
                     {user?.googleAccessToken ? (
-                        <p className="text-green-600">✅ Google Calendar connected</p>
+                        <div>
+                            <p className="text-green-600 mb-2">✅ Google Calendar connected</p>
+                            <Link
+                                href="/api/auth/google"
+                                className="text-blue-600 text-sm hover:underline"
+                            >
+                                Reconnect Google Calendar
+                            </Link>
+                        </div>
                     ) : (
                         <div>
                             <p className="text-gray-500 mb-4">Connect your Google Calendar to show free slots.</p>

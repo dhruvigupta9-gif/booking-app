@@ -25,11 +25,14 @@ export async function GET(req: Request) {
 
     const { tokens } = await oauth2Client.getToken(code)
 
+    const existingUser = await prisma.user.findUnique({ where: { id: userId } })
+
     await prisma.user.upsert({
         where: { id: userId },
         update: {
             googleAccessToken: tokens.access_token ?? null,
-            googleRefreshToken: tokens.refresh_token ?? null,
+            // agar naya refresh_token nahi mila, toh purana wala hi rakho (accidentally delete mat karo)
+            googleRefreshToken: tokens.refresh_token ?? existingUser?.googleRefreshToken ?? null,
         },
         create: {
             id: userId,
