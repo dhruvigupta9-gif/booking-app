@@ -114,6 +114,48 @@ export async function createCalendarEvent(
     return event.data.id
 }
 
+export interface UpcomingEvent {
+    id: string
+    title: string
+    start: string | null
+    end: string | null
+    isAllDay: boolean
+}
+
+// Fetches the next N upcoming events from the user's primary Google Calendar,
+// used to render the calendar widget on the dashboard.
+export async function getUpcomingEvents(userId: string, maxResults: number = 8): Promise<UpcomingEvent[]> {
+    const oauth2Client = await getAuthorizedClient(userId)
+    const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
+
+    const now = new Date()
+
+    try {
+        const response = await calendar.events.list({
+            calendarId: 'primary',
+            timeMin: now.toISOString(),
+            maxResults,
+            singleEvents: true,
+            orderBy: 'startTime',
+        })
+
+        const events = response.data.items ?? []
+
+        return events.map(event => ({
+            id: event.id ?? '',
+            title: event.summary || '(No title)',
+            start: event.start?.dateTime || event.start?.date || null,
+            end: event.end?.dateTime || event.end?.date || null,
+            isAllDay: !event.start?.dateTime && !!event.start?.date,
+        }))
+    } catch (err: any) {
+        if (err?.code === 401 || err?.response?.status === 401) {
+            throw new Error('Google Calendar access expired — please reconnect your calendar')
+        }
+        throw err
+    }
+}
+
 // Generates candidate start times stepped by `durationMinutes`, each slot
 // lasting exactly `durationMinutes` long, within the host's working hours.
 function generateTimeSlots(date: string, workStartHour: number, workEndHour: number, durationMinutes: number) {
