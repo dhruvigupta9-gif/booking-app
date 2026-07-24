@@ -42,9 +42,17 @@ export default function BookingForm({ hostId, hostName }: Props) {
         setLoadingSlots(true)
         setSlots([])
         setSelectedSlot(null)
+        setError('')
 
         const res = await fetch(`/api/slots?userId=${hostId}&date=${selectedDate}&duration=${selectedDuration}`)
         const data = await res.json()
+
+        if (!res.ok) {
+            setError(data.error || 'Failed to load available slots')
+            setLoadingSlots(false)
+            return
+        }
+
         setSlots(data.slots || [])
         setLoadingSlots(false)
     }
@@ -168,7 +176,13 @@ export default function BookingForm({ hostId, hostName }: Props) {
                 </div>
             )}
 
-            {slots.length === 0 && date && !loadingSlots && (
+            {error && !loadingSlots && (
+                <div className="text-center text-red-500 border border-red-300 rounded-lg p-6">
+                    {error}
+                </div>
+            )}
+
+            {slots.length === 0 && date && !loadingSlots && !error && (
                 <div className="text-center text-gray-500 border rounded-lg p-6">
                     No available slots for this date.
                 </div>
