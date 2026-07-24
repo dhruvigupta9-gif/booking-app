@@ -7,12 +7,14 @@ export async function sendBookingConfirmationToClient(
     booking: Booking,
     host: User
 ) {
-    const hostName = host.name || host.username || 'Host'
+    const hostName = host.username || host.name || 'Host'
     const date = new Date(booking.startTime).toLocaleDateString('en-IN', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        timeZone: 'Asia/Kolkata',
     })
     const time = new Date(booking.startTime).toLocaleTimeString('en-IN', {
-        hour: '2-digit', minute: '2-digit', hour12: true
+        hour: '2-digit', minute: '2-digit', hour12: true,
+        timeZone: 'Asia/Kolkata',
     })
 
     await resend.emails.send({
@@ -35,12 +37,14 @@ export async function sendBookingNotificationToHost(
     booking: Booking,
     host: User
 ) {
-    const hostName = host.name || host.username || 'Host'
+    const hostName = host.username || host.name || 'Host'
     const date = new Date(booking.startTime).toLocaleDateString('en-IN', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        timeZone: 'Asia/Kolkata',
     })
     const time = new Date(booking.startTime).toLocaleTimeString('en-IN', {
-        hour: '2-digit', minute: '2-digit', hour12: true
+        hour: '2-digit', minute: '2-digit', hour12: true,
+        timeZone: 'Asia/Kolkata',
     })
 
     await resend.emails.send({
@@ -80,5 +84,35 @@ export async function sendBookingStatusUpdate(
         ${status === 'approved' ? '<p>See you then</p>' : '<p>Feel free to book another slot.</p>'}
         <p>Thanks for using Schedulr</p>
         `,
+    })
+}
+
+// Tells the client whether their refund succeeded or is stuck/failed,
+// so they aren't left wondering what's happening with their money.
+export async function sendRefundStatusUpdate(
+    clientEmail: string,
+    clientName: string,
+    hostName: string,
+    refundSucceeded: boolean
+) {
+    await resend.emails.send({
+        from: 'Schedulr <onboarding@resend.dev>',
+        to: clientEmail,
+        subject: refundSucceeded ? 'Your refund has been processed' : 'Refund delayed for your booking',
+        html: refundSucceeded
+            ? `
+            <h2>Refund Processed</h2>
+            <p>Hi ${clientName}</p>
+            <p>Your booking with <strong>${hostName}</strong> was declined, and your payment has been refunded.</p>
+            <p>The refunded amount should reflect in your account within a few business days, depending on your bank.</p>
+            <p>Thanks for using Schedulr</p>
+            `
+            : `
+            <h2>Refund Delayed</h2>
+            <p>Hi ${clientName}</p>
+            <p>Your booking with <strong>${hostName}</strong> was declined. We attempted to process your refund automatically, but it did not go through immediately.</p>
+            <p>Our team has been notified and will process your refund manually. We apologize for the delay — you do not need to take any action right now.</p>
+            <p>Thanks for your patience.</p>
+            `,
     })
 }

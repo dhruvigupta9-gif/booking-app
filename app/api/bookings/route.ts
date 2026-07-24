@@ -65,7 +65,6 @@ export async function POST(req: Request) {
         })
 
         const origin = new URL(req.url).origin
-        success_url: `${origin}/book/${host.username}?paid=true`
 
         const session = await stripe.checkout.sessions.create({
             mode: 'payment',
@@ -73,7 +72,7 @@ export async function POST(req: Request) {
             line_items: [{
                 price_data: {
                     currency: 'inr',
-                    product_data: { name: `${duration}-min session with ${host.name || host.username}` },
+                    product_data: { name: `${duration}-min session with ${host.username || host.name}` },
                     unit_amount: amount,
                 },
                 quantity: 1,

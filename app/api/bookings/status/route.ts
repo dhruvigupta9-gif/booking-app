@@ -1,7 +1,8 @@
 import { auth } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { createCalendarEvent } from '@/lib/calendar'
-import { sendBookingStatusUpdate } from '@/lib/email'
+import { sendBookingStatusUpdate, sendRefundStatusUpdate } from '@/lib/email'
+import { stripe } from '@/lib/stripe'
 
 export async function POST(req: Request) {
     const { userId } = await auth()
@@ -38,6 +39,8 @@ export async function POST(req: Request) {
         data: { approvalStatus: status },
     })
 
+    const hostName = booking.host.username || booking.host.name || booking.host.email
+
     // Write to Google Calendar only when approving a personal booking.
     // Work bookings get written to the calendar from the Stripe webhook
     // instead, since they also require payment before being confirmed.
@@ -57,19 +60,69 @@ export async function POST(req: Request) {
         }
     }
 
+    // Refund the client automatically if a paid "work" booking gets rejected.
+    // Without this, the client's money would stay charged even though the
+    // host declined the session. We also email the client either way, so
+    // they know the refund succeeded or that it's being handled manually.
+    if (status === 'rejected' && booking.type === 'work' && booking.paymentStatus === 'paid') {
+        let refundSucceeded = false
+
+        try {
+            if (!booking.stripeSessionId) {
+                throw new Error('No Stripe session id on this booking, cannot refund')
+            }
+
+            const session = await stripe.checkout.sessions.retrieve(booking.stripeSessionId)
+            const paymentIntentId = session.payment_intent as string
+
+            if (!paymentIntentId) {
+                throw new Error('No payment_intent found on Stripe session')
+            }
+
+            await stripe.refunds.create({
+                payment_intent: paymentIntentId,
+            })
+
+            await prisma.booking.update({
+                where: { id: bookingId },
+                data: { paymentStatus: 'refunded' },
+            })
+
+            refundSucceeded = true
+        } catch (err) {
+            console.log('Refund failed:', err)
+            // This failure needs to be visible somewhere (logs/alerting) so
+            // a human can issue the refund manually if it doesn't happen
+            // automatically. The client is still told via email below.
+        }
+
+        try {
+            await sendRefundStatusUpdate(
+                booking.clientEmail,
+                booking.clientName,
+                hostName,
+                refundSucceeded
+            )
+        } catch (err) {
+            console.log('Refund status email failed to send:', err)
+        }
+    }
+
     const date = new Date(booking.startTime).toLocaleDateString('en-IN', {
-        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+        weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+        timeZone: 'Asia/Kolkata',
     })
 
     const time = new Date(booking.startTime).toLocaleTimeString('en-IN', {
-        hour: '2-digit', minute: '2-digit', hour12: true
+        hour: '2-digit', minute: '2-digit', hour12: true,
+        timeZone: 'Asia/Kolkata',
     })
 
     try {
         await sendBookingStatusUpdate(
             booking.clientEmail,
             booking.clientName,
-            booking.host.name || booking.host.email,
+            hostName,
             status,
             date,
             time
