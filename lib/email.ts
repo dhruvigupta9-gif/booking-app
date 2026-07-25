@@ -20,7 +20,7 @@ export async function sendBookingConfirmationToClient(
     await resend.emails.send({
         from: 'Schedulr <onboarding@resend.dev>',
         to: booking.clientEmail,
-        subject: `Your booking with ${hostName} is confirmed`,
+        subject: `Your booking with ${hostName} is received`,
         html: `
         <h2>Booking received!</h2>
         <p>Hi ${booking.clientName}</p>
