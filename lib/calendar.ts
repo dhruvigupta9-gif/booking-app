@@ -131,22 +131,30 @@ export async function getUpcomingEvents(userId: string, maxResults: number = 8):
     const now = new Date()
 
     try {
+        // Fetch more raw events than we need, since we filter out all-day
+        // events (birthdays, holidays) afterwards — otherwise we could end
+        // up with fewer real events than maxResults even if more exist.
         const response = await calendar.events.list({
             calendarId: 'primary',
             timeMin: now.toISOString(),
-            maxResults,
+            maxResults: Math.max(maxResults * 4, 25),
             singleEvents: true,
             orderBy: 'startTime',
         })
 
         const events = response.data.items ?? []
 
-        return events.map(event => ({
+        // Skip all-day events (birthdays, holidays, etc). Schedulr never
+        // creates all-day events, so anything without a specific dateTime
+        // is noise from Google's auto-generated Birthdays/Holidays calendar.
+        const timedEvents = events.filter(event => !!event.start?.dateTime)
+
+        return timedEvents.slice(0, maxResults).map(event => ({
             id: event.id ?? '',
             title: event.summary || '(No title)',
-            start: event.start?.dateTime || event.start?.date || null,
-            end: event.end?.dateTime || event.end?.date || null,
-            isAllDay: !event.start?.dateTime && !!event.start?.date,
+            start: event.start?.dateTime || null,
+            end: event.end?.dateTime || null,
+            isAllDay: false,
         }))
     } catch (err: any) {
         if (err?.code === 401 || err?.response?.status === 401) {
