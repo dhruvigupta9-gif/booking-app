@@ -1,5 +1,5 @@
 import { google } from 'googleapis'
-import { auth } from '@clerk/nextjs/server'
+import { auth, currentUser } from '@clerk/nextjs/server'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
 
@@ -27,6 +27,15 @@ export async function GET(req: Request) {
 
     const existingUser = await prisma.user.findUnique({ where: { id: userId } })
 
+    // If the user doesn't exist in our DB yet, fetch their real email from
+    // Clerk instead of using a placeholder — email is a unique column, so a
+    // hardcoded '' would collide across multiple new users.
+    let email = existingUser?.email
+    if (!email) {
+        const clerkUser = await currentUser()
+        email = clerkUser?.primaryEmailAddress?.emailAddress ?? `${userId}@placeholder.local`
+    }
+
     await prisma.user.upsert({
         where: { id: userId },
         update: {
@@ -36,7 +45,7 @@ export async function GET(req: Request) {
         },
         create: {
             id: userId,
-            email: '',
+            email,
             googleAccessToken: tokens.access_token ?? null,
             googleRefreshToken: tokens.refresh_token ?? null,
         },
