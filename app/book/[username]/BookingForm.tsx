@@ -102,9 +102,9 @@ export default function BookingForm({ hostId, hostName }: Props) {
     if (success) {
         return (
             <div className="text-center p-8 border rounded-lg">
-                <h2 className="text-2xl font-bold text-green-600 mb-2">Booking Confirmed!</h2>
+                <h2 className="text-2xl font-bold text-green-600 mb-2">Booking Received!</h2>
                 <p className="text-gray-500">
-                    Your booking with {hostName} has been submitted.
+                    Your booking with {hostName} has been received.
                     You will receive a confirmation email shortly.
                 </p>
             </div>
