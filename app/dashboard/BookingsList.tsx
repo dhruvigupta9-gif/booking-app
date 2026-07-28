@@ -78,12 +78,15 @@ export default function BookingsList({ bookings }: Props) {
 
                     <div className="text-sm text-gray-600 mb-3">
                         <p>📅 {new Date(booking.startTime).toLocaleDateString('en-IN', {
-                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric'
+                            weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
+                            timeZone: 'Asia/Kolkata',
                         })}</p>
                         <p>🕐 {new Date(booking.startTime).toLocaleTimeString('en-IN', {
-                            hour: '2-digit', minute: '2-digit', hour12: true
+                            hour: '2-digit', minute: '2-digit', hour12: true,
+                            timeZone: 'Asia/Kolkata',
                         })} — {new Date(booking.endTime).toLocaleTimeString('en-IN', {
-                            hour: '2-digit', minute: '2-digit', hour12: true
+                            hour: '2-digit', minute: '2-digit', hour12: true,
+                            timeZone: 'Asia/Kolkata',
                         })}</p>
                         <p>📋 {booking.type === 'work' ? '💼 Work booking' : '👤 Personal booking'}</p>
                     </div>
