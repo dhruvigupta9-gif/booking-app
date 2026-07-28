@@ -1,7 +1,31 @@
-import { Resend } from 'resend'
 import { Booking, User } from '@prisma/client'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
+const BREVO_API_URL = 'https://api.brevo.com/v3/smtp/email'
+const SENDER = { name: 'Schedulr', email: 'dhruvigupta9@gmail.com' }
+
+async function sendViaBrevo(to: { email: string; name?: string }, subject: string, html: string) {
+    const res = await fetch(BREVO_API_URL, {
+        method: 'POST',
+        headers: {
+            'api-key': process.env.BREVO_API_KEY!,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+            sender: SENDER,
+            to: [to],
+            subject,
+            htmlContent: html,
+        }),
+    })
+
+    if (!res.ok) {
+        const errorBody = await res.text()
+        throw new Error(`Brevo email send failed (${res.status}): ${errorBody}`)
+    }
+
+    return res.json()
+}
 
 export async function sendBookingConfirmationToClient(
     booking: Booking,
@@ -17,11 +41,10 @@ export async function sendBookingConfirmationToClient(
         timeZone: 'Asia/Kolkata',
     })
 
-    await resend.emails.send({
-        from: 'Schedulr <onboarding@resend.dev>',
-        to: booking.clientEmail,
-        subject: `Your booking with ${hostName} is received`,
-        html: `
+    await sendViaBrevo(
+        { email: booking.clientEmail, name: booking.clientName },
+        `Your booking with ${hostName} is confirmed`,
+        `
         <h2>Booking received!</h2>
         <p>Hi ${booking.clientName}</p>
         <p> Your booking request with <strong>${hostName}</strong> has been received.</p>
@@ -29,8 +52,8 @@ export async function sendBookingConfirmationToClient(
         <p><strong>Time:</strong> ${time}</p>
         <p>We will notify you once it is confirmed.</p>
         <p>Thanks for using Schedulr</p>
-        `,
-    })
+        `
+    )
 }
 
 export async function sendBookingNotificationToHost(
@@ -47,11 +70,10 @@ export async function sendBookingNotificationToHost(
         timeZone: 'Asia/Kolkata',
     })
 
-    await resend.emails.send({
-        from: 'Schedulr <onboarding@resend.dev>',
-        to: host.email,
-        subject: `New booking request from ${booking.clientName}`,
-        html: `
+    await sendViaBrevo(
+        { email: host.email, name: hostName },
+        `New booking request from ${booking.clientName}`,
+        `
         <h2>New Booking Request</h2>
         <p>Hi ${hostName}</p>
         <p> You have received a new booking request from <strong>${booking.clientName}</strong></p>
@@ -59,8 +81,8 @@ export async function sendBookingNotificationToHost(
         <p><strong>Time:</strong> ${time}</p>
         <p><strong>Type:</strong> ${booking.type}</p>
         <p>Log in to your Schedulr dashboard to approve or reject this booking.</p>
-        `,
-    })
+        `
+    )
 }
 
 export async function sendBookingStatusUpdate(
@@ -71,11 +93,10 @@ export async function sendBookingStatusUpdate(
     date: string,
     time: string
 ) {
-    await resend.emails.send({
-        from: "Schedulr <onboarding@resend.dev>",
-        to: clientEmail,
-        subject: `Booking ${status}`,
-        html: `
+    await sendViaBrevo(
+        { email: clientEmail, name: clientName },
+        `Booking ${status}`,
+        `
         <h2>Booking ${status === 'approved' ? 'Approved' : 'Rejected'}</h2>
         <p>Hi ${clientName}</p>
         <p>Your booking with <strong>${hostName}</strong> has been ${status}</p>
@@ -83,8 +104,8 @@ export async function sendBookingStatusUpdate(
         <p><strong>Time:</strong> ${time}</p>
         ${status === 'approved' ? '<p>See you then</p>' : '<p>Feel free to book another slot.</p>'}
         <p>Thanks for using Schedulr</p>
-        `,
-    })
+        `
+    )
 }
 
 // Tells the client whether their refund succeeded or is stuck/failed,
@@ -95,11 +116,10 @@ export async function sendRefundStatusUpdate(
     hostName: string,
     refundSucceeded: boolean
 ) {
-    await resend.emails.send({
-        from: 'Schedulr <onboarding@resend.dev>',
-        to: clientEmail,
-        subject: refundSucceeded ? 'Your refund has been processed' : 'Refund delayed for your booking',
-        html: refundSucceeded
+    await sendViaBrevo(
+        { email: clientEmail, name: clientName },
+        refundSucceeded ? 'Your refund has been processed' : 'Refund delayed for your booking',
+        refundSucceeded
             ? `
             <h2>Refund Processed</h2>
             <p>Hi ${clientName}</p>
@@ -113,6 +133,6 @@ export async function sendRefundStatusUpdate(
             <p>Your booking with <strong>${hostName}</strong> was declined. We attempted to process your refund automatically, but it did not go through immediately.</p>
             <p>Our team has been notified and will process your refund manually. We apologize for the delay — you do not need to take any action right now.</p>
             <p>Thanks for your patience.</p>
-            `,
-    })
+            `
+    )
 }
