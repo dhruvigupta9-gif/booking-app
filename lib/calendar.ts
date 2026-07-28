@@ -43,11 +43,12 @@ export async function getFreeBusySlots(userId: string, date: string, durationMin
     const oauth2Client = await getAuthorizedClient(userId)
     const calendar = google.calendar({ version: 'v3', auth: oauth2Client })
 
-    const startOfDay = new Date(date)
-    startOfDay.setHours(0, 0, 0, 0)
-
-    const endOfDay = new Date(date)
-    endOfDay.setHours(23, 59, 59, 999)
+    // Use an explicit IST (+05:30) offset instead of relying on the
+    // server's local timezone. On Vercel the server runs in UTC, so
+    // `new Date(date); setHours(0,0,0,0)` would silently treat these as
+    // UTC hours instead of IST hours — shifting every slot by 5:30.
+    const startOfDay = new Date(`${date}T00:00:00+05:30`)
+    const endOfDay = new Date(`${date}T23:59:59.999+05:30`)
 
     let busySlots: { start?: string | null; end?: string | null }[] = []
 
@@ -168,11 +169,13 @@ export async function getUpcomingEvents(userId: string, maxResults: number = 8):
 // lasting exactly `durationMinutes` long, within the host's working hours.
 function generateTimeSlots(date: string, workStartHour: number, workEndHour: number, durationMinutes: number) {
     const slots = []
-    const start = new Date(date)
-    start.setHours(workStartHour, 0, 0, 0)
 
-    const end = new Date(date)
-    end.setHours(workEndHour, 0, 0, 0)
+    // Build the work-start/end times using an explicit IST (+05:30) offset,
+    // so this works correctly regardless of the server's own timezone
+    // (Vercel runs in UTC).
+    const pad = (n: number) => String(n).padStart(2, '0')
+    const start = new Date(`${date}T${pad(workStartHour)}:00:00+05:30`)
+    const end = new Date(`${date}T${pad(workEndHour)}:00:00+05:30`)
 
     const current = new Date(start)
 
@@ -188,6 +191,7 @@ function generateTimeSlots(date: string, workStartHour: number, workEndHour: num
                 hour: '2-digit',
                 minute: '2-digit',
                 hour12: true,
+                timeZone: 'Asia/Kolkata',
             }),
         })
         current.setMinutes(current.getMinutes() + durationMinutes)
