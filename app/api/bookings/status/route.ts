@@ -41,22 +41,35 @@ export async function POST(req: Request) {
 
     const hostName = booking.host.username || booking.host.name || booking.host.email
 
-    // Write to Google Calendar only when approving a personal booking.
-    // Work bookings get written to the calendar from the Stripe webhook
-    // instead, since they also require payment before being confirmed.
-    if (status === 'approved' && booking.type === 'personal') {
-        try {
-            await createCalendarEvent(booking.hostId, {
-                clientName: booking.clientName,
-                clientEmail: booking.clientEmail,
-                startTime: booking.startTime,
-                endTime: booking.endTime,
-                type: booking.type,
-            })
-        } catch (err) {
-            console.log('Failed to create calendar event:', err)
-            // Don't fail the whole request just because the calendar write
-            // failed — the booking is still approved in your DB either way.
+    // Write to Google Calendar when a booking gets approved:
+    // - Personal bookings never need payment, so create the event right away.
+    // - Work bookings need BOTH payment and approval. Since payment usually
+    //   happens before the host reviews the request, the Stripe webhook's
+    //   "approved already" check rarely fires — so we also create the event
+    //   here if payment is already done by the time of approval.
+    if (status === 'approved' && !booking.calendarEventId) {
+        const shouldCreateEvent =
+            booking.type === 'personal' ||
+            (booking.type === 'work' && booking.paymentStatus === 'paid')
+
+        if (shouldCreateEvent) {
+            try {
+                const eventId = await createCalendarEvent(booking.hostId, {
+                    clientName: booking.clientName,
+                    clientEmail: booking.clientEmail,
+                    startTime: booking.startTime,
+                    endTime: booking.endTime,
+                    type: booking.type,
+                })
+                await prisma.booking.update({
+                    where: { id: bookingId },
+                    data: { calendarEventId: eventId ?? undefined },
+                })
+            } catch (err) {
+                console.log('Failed to create calendar event:', err)
+                // Don't fail the whole request just because the calendar write
+                // failed — the booking is still approved in your DB either way.
+            }
         }
     }
 
