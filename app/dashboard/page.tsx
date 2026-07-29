@@ -8,6 +8,7 @@ import BookingsList from './BookingsList'
 import HourlyRateForm from './HourlyRateForm'
 import WorkingHoursForm from './WorkingHoursForm'
 import GoogleCalendarWidget from './GoogleCalendarWidget'
+import AutoRefresh from './AutoRefresh'
 
 export default async function DashboardPage() {
     const { userId } = await auth()
@@ -27,6 +28,7 @@ export default async function DashboardPage() {
 
     return (
         <main className="min-h-screen p-8">
+            <AutoRefresh intervalSeconds={10} />
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold">Schedulr Dashboard</h1>
                 <UserButton />
