@@ -43,7 +43,7 @@ export async function sendBookingConfirmationToClient(
 
     await sendViaBrevo(
         { email: booking.clientEmail, name: booking.clientName },
-        `Your booking with ${hostName} is confirmed`,
+        `Your booking with ${hostName} is received`,
         `
         <h2>Booking received!</h2>
         <p>Hi ${booking.clientName}</p>
