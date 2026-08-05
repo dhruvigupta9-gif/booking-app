@@ -58,28 +58,11 @@ I built this project to learn how real-world scheduling systems work and to gain
 
 ---
 
-## Running the Project Locally
+## Live Demo
 
-```bash
-git clone https://github.com/dhruvigupta9-gif/booking-app.git
-cd booking-app
-npm install
-```
+🌐 https://getschedulr.vercel.app
 
-Create a `.env` file and add the required API keys and database credentials.
-
-Then run:
-
-```bash
-npx prisma db push
-npm run dev
-```
-
-The app will be available at:
-
-```text
-https://getschedulr.vercel.app/
-```
+Try creating an account, connecting Google Calendar, and booking a session through a public booking page.
 
 ---
 
